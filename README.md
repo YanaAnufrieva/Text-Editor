@@ -11,7 +11,9 @@
 
 Диаграмма состояний сканера:
 
-![image](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/c3459f93-685c-4394-800e-7f007be2fa1b)
+![схема](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/42b1a043-7e11-4cd9-9bea-2539b9a6d00a)
+
+
 
 
 Примеры допустимых строк:
