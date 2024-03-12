@@ -50,19 +50,19 @@ namespace TextEditorMVC
                     i++;
                     if (IsKeywordConst(subText))
                     {
-                        lexemes.Add(new LexemaInfo(subText, i, 1, "Ключевое слово - const"));
+                        lexemes.Add(new LexemaInfo(subText, i, j, 1, "Ключевое слово - const"));
                     }
                     else if (IsKeywordVal(subText))
                     {
-                        lexemes.Add(new LexemaInfo(subText, i, 2, "Ключевое слово - val"));
+                        lexemes.Add(new LexemaInfo(subText, i, j, 2, "Ключевое слово - val"));
                     }
                     else if (IsKeywordDouble(subText))
                     {
-                        lexemes.Add(new LexemaInfo(subText, i, 3, "Ключевое слово - Double"));
+                        lexemes.Add(new LexemaInfo(subText, i, j, 3, "Ключевое слово - Double"));
                     }
                     else if (IsVariableName(subText))
                     {
-                        lexemes.Add(new LexemaInfo(subText, i, 4, "Идентификатор"));
+                        lexemes.Add(new LexemaInfo(subText, i, j, 4, "Идентификатор"));
                     }
                     else
                     {
@@ -73,23 +73,23 @@ namespace TextEditorMVC
                 }
                 else if (IsSpace(code[i].ToString()))
                 {
-                    lexemes.Add(new LexemaInfo(code[i].ToString(), i + 1, 5, "Разделитель - пробел"));
+                    lexemes.Add(new LexemaInfo(code[i].ToString(), i + 1, i + 1, 5, "Разделитель - пробел"));
                     i++;
                 }
                 else if (IsAssignmentOperator(code[i].ToString()))
                 {
-                    lexemes.Add(new LexemaInfo(code[i].ToString(), i + 1, 6, "Оператор присваивания"));
+                    lexemes.Add(new LexemaInfo(code[i].ToString(), i + 1, i + 1, 6, "Оператор присваивания"));
                     i++;
                 }
                 else if (IsColon(code[i].ToString()))
                 {
-                    lexemes.Add(new LexemaInfo(code[i].ToString(), i + 1, 7, "Оператор принадлежности к типу - двоеточие"));
+                    lexemes.Add(new LexemaInfo(code[i].ToString(), i + 1, i + 1, 7, "Оператор принадлежности к типу - двоеточие"));
                     i++;
                 }
                 else if (Char.IsNumber(code[i]))
                 {
                     int j = i;
-                    while (Char.IsNumber(code[j]) || code[j] == '.')
+                    while (Char.IsNumber(code[j]) || code[j] == '.' )
                     {
                         j++;
                         if (j >= code.Length)
@@ -103,7 +103,7 @@ namespace TextEditorMVC
                     i++;
                     if (IsRealNumber(subText))
                     {
-                        lexemes.Add(new LexemaInfo(subText, i, 8, "Вещественное число"));
+                        lexemes.Add(new LexemaInfo(subText, i, j, 8, "Вещественное число"));
                     }
                     else
                     {
@@ -115,7 +115,7 @@ namespace TextEditorMVC
                 }
                 else if (IsEndOfOperator(code[i].ToString()))
                 {
-                    lexemes.Add(new LexemaInfo("\\n", i + 1, 9, "Конец оператора - перенос на новую строку"));
+                    lexemes.Add(new LexemaInfo("\\n", i + 1, i + 1, 9, "Конец оператора - перенос на новую строку"));
                     i++;
                 }
                 else if (code[i] == '\r')
@@ -173,7 +173,7 @@ namespace TextEditorMVC
 
         static bool IsRealNumber(string text)
         {
-            return text.Contains('.') && double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedDoubleNumber);
+            return double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedDoubleNumber);
         }
     }
 }
