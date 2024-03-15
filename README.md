@@ -26,25 +26,7 @@ const val id: Double=-32.31
 
 Разработанная граматика G[<DEF>]:
 
-1.  <DEF> -> ‘const’ <CONST>
-2.  <CONST> -> ‘ ’ <SPACE>
-3.  <SPACE> -> ‘val’ <VAL>
-4.  <VAL> -> ‘ ’ <ID>
-5.  <ID> -> (Letter | ‘_’) <IDREM>
-6.  <IDREM> -> (Letter | '_' | digit) <IDREM>   
-7.  <IDREM> -> ‘:’ <TYPE>
-8.  <TYPE> -> ‘Double’ <EQUAL>
-9.  <EQUAL> -> ‘=’ <DOUBLE>
-10.  <DOUBLE> -> [+|-] <NUMBER>
-11.  <NUMBER> -> Digit <NUMBERREM>
-12.  <NUMBERREM> -> Digit <NUMBERREM> | \n
-13.  <NUMBERREM> -> ‘.’ <DECIMAL>
-14.  <DECIMAL> ->Digit <DECIMALREM>
-15.  <DECIMALREM> -> Digit <DECIMALREM> | \n
-
-‹Digit› → “0” | “1” | “2” | “3” | “4” | “5” | “6” | “7” | “8” | “9”
-
-‹Letter› → “a” | “b” | “c” | ... | “z” | “A” | “B” | “C” | ... | “Z”
+![image](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/f8c3cadb-29c9-481c-9684-b3067587608c)
 
 
 Граф конечного автомата:
