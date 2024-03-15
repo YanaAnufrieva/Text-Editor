@@ -390,7 +390,7 @@ namespace TextEditorMVC
                     else
                     {
                         DataGridErrors.ItemsSource = null;
-                        DataGridErrors.ItemsSource = parserController.GetErrors();
+                        DataGridErrors.ItemsSource = errors;
                         TabControlOutput.SelectedIndex = 0;
                     }
                 }

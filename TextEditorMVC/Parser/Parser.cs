@@ -29,7 +29,7 @@ namespace TextEditorMVC
 
             int lexemesIndex = 0;
             int k = 0;
-            while (k < numberOfLines)
+            while (k <= numberOfLines)
             {
                 if (k != numberOfLines)
                 {
@@ -47,7 +47,7 @@ namespace TextEditorMVC
                     {
                         if (i == 0 && lexemes[lexemesIndex].LexemaType.Code == 9)
                         {
-                            currentPos += lexemes[lexemesIndex].Text.Length;
+                            currentPos += lexemes[lexemesIndex].Text.Length + 1;
                             lexemesIndex++;
                             break;
                         }
@@ -66,6 +66,11 @@ namespace TextEditorMVC
 
                         if (lexemes[lexemesIndex].LexemaType.Code == currentLexemaCode)
                         {
+                            if (lexemes[lexemesIndex].LexemaType.Code == 9)
+                            {
+                                currentPos++;
+                            }
+
                             currentPos += lexemes[lexemesIndex].Text.Length;
                             lexemesIndex++;
                         }
