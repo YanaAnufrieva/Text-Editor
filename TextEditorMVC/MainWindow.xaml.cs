@@ -12,7 +12,8 @@ namespace TextEditorMVC
     {
         FilesController filesController = new FilesController();
         LexerController lexerController = new LexerController();
-
+        ParserController parserController = new ParserController();
+        ErrorNeutralizerController errorNeutralizerController = new ErrorNeutralizerController();
         public MainWindow()
         {
             InitializeComponent();
@@ -163,7 +164,7 @@ namespace TextEditorMVC
         private void TextBoxInput_TextChanged(object sender, TextChangedEventArgs e)
         {
             string currentText = ((TextBox)sender).Text;
-
+            TextHelper.Text = currentText;
             filesController.OpenedFileTextChanged(currentText);
         }
 
@@ -351,17 +352,53 @@ namespace TextEditorMVC
 
         private void Start_Click(object sender, RoutedEventArgs e)
         {
-            DataGridOutput.ItemsSource = null;
-            DataGridErrors.ItemsSource = null;
+            if (TabControlFiles.Items.Count == 0) return;
 
+            TextHelper.Text = filesController.OpenedFile.Content;
             if (lexerController.LexicalAnalysis(filesController.OpenedFile.Content))
             {
-                DataGridOutput.ItemsSource = lexerController.Lexemes;
+                DataGridOutput.ItemsSource = null;
+                DataGridOutput.ItemsSource = lexerController.GetLexemesVM();
                 TabControlOutput.SelectedIndex = 1;
+
+                if (!parserController.SyntacticAnalysis(lexerController.GetLexemes()))
+                {
+                    var errors = parserController.GetErrors();
+                    var correctedLexemes = errorNeutralizerController.NeutralizingErrors(lexerController.GetLexemes());
+
+                    if (parserController.SyntacticAnalysis(correctedLexemes))
+                    {
+                        var result = MessageBox.Show("В тексте обнаружены ошибки! Исправить?", "Ошибки", MessageBoxButton.YesNo);
+                        if (result == MessageBoxResult.Yes)
+                        {
+                            TabItem currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
+                            ((TextBox)currentItem.Content).Text = TextHelper.CreateTextFromLexemes(correctedLexemes);
+
+                            lexerController.LexicalAnalysis(filesController.OpenedFile.Content);
+                            DataGridOutput.ItemsSource = null;
+                            DataGridErrors.ItemsSource = null;
+                            DataGridOutput.ItemsSource = lexerController.GetLexemesVM();
+                            TabControlOutput.SelectedIndex = 1;
+                        }
+                        else
+                        {
+                            DataGridErrors.ItemsSource = null;
+                            DataGridErrors.ItemsSource = errors;
+                            TabControlOutput.SelectedIndex = 0;
+                        }
+                    }
+                    else
+                    {
+                        DataGridErrors.ItemsSource = null;
+                        DataGridErrors.ItemsSource = parserController.GetErrors();
+                        TabControlOutput.SelectedIndex = 0;
+                    }
+                }
             }
             else
             {
-                DataGridErrors.ItemsSource = lexerController.Errors;
+                DataGridErrors.ItemsSource = null;
+                DataGridErrors.ItemsSource = lexerController.GetErrors();
                 TabControlOutput.SelectedIndex = 0;
             }
         }
