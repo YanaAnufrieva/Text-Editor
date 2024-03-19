@@ -26,12 +26,13 @@ const val id: Double=-32.31
 
 Разработанная граматика G[<DEF>]:
 
-![image](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/f8c3cadb-29c9-481c-9684-b3067587608c)
+![image](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/8205d01c-310a-469a-9d1c-3e1570f1869f)
+
 
 
 Граф конечного автомата:
 
-![конечный автомат](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/56d95ffc-80a2-4d98-97da-cf6f72c189dc)
+![конечный автомат](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/2224ce00-ea78-40ef-b7ca-31b53bb715ff)
 
 
 
