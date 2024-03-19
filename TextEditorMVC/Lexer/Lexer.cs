@@ -140,17 +140,22 @@ namespace TextEditorMVC
 
                     i = j;
                 }
-                else if (IsEndOfOperator(code[i].ToString()))
+                else if (IsSemicolon(code[i].ToString()))
                 {
-                    lexemes.Add(new LexemaInfo("\\n", i, LexemaTypes.dict[9]));
+                    lexemes.Add(new LexemaInfo(";", i, LexemaTypes.dict[9]));
+                    i++;
+                }
+                else if (IsNewLine(code[i].ToString()))
+                {
+                    lexemes.Add(new LexemaInfo("\\n", i, LexemaTypes.dict[10]));
                     i++;
                 }
                 else if (code[i] == '\r')
                 {
                     int j = i + 1;
-                    if (IsEndOfOperator(code[j].ToString()))
+                    if (IsNewLine(code[j].ToString()))
                     {
-                        lexemes.Add(new LexemaInfo("\\n", i, LexemaTypes.dict[9]));
+                        lexemes.Add(new LexemaInfo("\\n", i, LexemaTypes.dict[10]));
                     }
                     i = j + 1;
                 }
@@ -161,6 +166,12 @@ namespace TextEditorMVC
                 }
             }
         }
+
+        bool IsSemicolon(string text)
+        {
+            return (text == ";");
+        }
+
 
         bool IsKeywordConst(string text)
         {
@@ -205,13 +216,17 @@ namespace TextEditorMVC
             return (text == ":");
         }
 
-        bool IsEndOfOperator(string text)
+        bool IsNewLine(string text)
         {
             return (text == "\n");
         }
 
         static bool IsRealNumber(string text)
         {
+            if (text[^1] == '.')
+            {
+                return false;
+            }
             return double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedDoubleNumber);
         }
     }

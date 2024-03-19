@@ -11,6 +11,11 @@ namespace TextEditorMVC
     {
         private List<LexemaInfo> lexemes = new();
         private List<Error> errors = new();
+
+        LexemaType prevLexema;
+        private int i = 0;
+
+
         public List<Error> Errors { get { return errors; } }
 
         public Parser(List<LexemaInfo> lexemes)
@@ -18,76 +23,239 @@ namespace TextEditorMVC
             this.lexemes = lexemes;
         }
 
-        public void SyntacticAnalysis()
+
+        public bool SyntacticAnalysis()
         {
-            errors = new();
-            string correctString;
-            int currentPos = 0;
+            errors = new List<Error>();
 
-            int numberOfLines = lexemes.Where(x => x.LexemaType.Equals(LexemaTypes.dict[9])).Count();
-            numberOfLines -= TextHelper.NumberOfEmptyStrings(lexemes);
+            prevLexema = new LexemaType(0, "Def");
 
-            int lexemesIndex = 0;
-            int k = 0;
-            while (k <= numberOfLines)
+            while (i < lexemes.Count)
             {
-                if (k != numberOfLines)
+                List<LexemaType> expectedLexemes = new List<LexemaType>();
+
+                switch (prevLexema.Code)
                 {
-                    correctString = "12473689";
+                    case 0: // Def
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[1] , LexemaTypes.dict[10] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
+                    case 1: // const
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[2] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
+                    case 2: // val
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[4] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
+                    case 3: // Double
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[6] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
+                    case 4: // identificator
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[7] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
+                    case 6: // =
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[8] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
+                    case 7: // :
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[3] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
+                    case 8: // double number
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[9] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
+                    case 9: // ;
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[1], LexemaTypes.dict[10] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
+                    case 10: // \n
+                        {
+                            expectedLexemes.AddRange(new List<LexemaType> {
+                                LexemaTypes.dict[5], LexemaTypes.dict[1], LexemaTypes.dict[10] });
+                            CheckLexema(expectedLexemes);
+
+                            break;
+                        }
                 }
+            }
+
+            EndExpression();
+
+            if (errors.Count != 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        // провекра лексемы
+        private void CheckLexema(List<LexemaType> expectedLexemes)
+        {
+            // в нужных лексемах нет пробела - в списке одна лексема
+            if (expectedLexemes[0] != LexemaTypes.dict[5])
+            {
+                // текущая лексема подходит
+                if (lexemes[i].LexemaType == expectedLexemes[0])
+                {
+                    prevLexema = lexemes[i].LexemaType;
+                    i++;
+                }
+                // текущая лексема не подходит
                 else
                 {
-                    correctString = "1247368";
+                    Error error = new(lexemes[i].Position, $"Ожидается {expectedLexemes[1].Name}");
+                    errors.Add(error);
+                    prevLexema = expectedLexemes[0];
                 }
-
-                for (int i = 0; i < correctString.Length; i++)
+            }
+            else
+            {
+                // пропускаем пробелы
+                while (i < lexemes.Count && lexemes[i].LexemaType == expectedLexemes[0])
                 {
-                    int.TryParse(correctString[i].ToString(), out int currentLexemaCode);
-                    if (lexemesIndex < lexemes.Count)
+                    i++;
+                }
+                // вышли за границу
+                if (i >= lexemes.Count)
+                {
+                    return;
+                }
+                // проверка текущей лексемы
+                for (int j = 1; j < expectedLexemes.Count; j++)
+                {
+                    // текущая лексема в списке нужных
+                    if (lexemes[i].LexemaType == expectedLexemes[j])
                     {
-                        if (i == 0 && lexemes[lexemesIndex].LexemaType.Code == 9)
+                        prevLexema = lexemes[i].LexemaType;
+                        i++;
+                        return;
+                    }
+                }
+                // текущая лексема не подходит
+                Error error = new(lexemes[i].Position, $"Ожидается {expectedLexemes[1].Name}");
+                errors.Add(error);
+                prevLexema = expectedLexemes[1];
+            }
+        }
+
+        // функция добавляет ошибки если выражение не закончено
+        private void EndExpression()
+        {
+            while (prevLexema != LexemaTypes.dict[9])
+            {
+                LexemaType expectedLexemes;
+
+                switch (prevLexema.Code)
+                {
+                    case 0: // Def
                         {
-                            currentPos += lexemes[lexemesIndex].Text.Length + 1;
-                            lexemesIndex++;
+                            expectedLexemes = LexemaTypes.dict[5];
+                            int position = lexemes[i - 1].Position + lexemes[i - 1].Text.Length;
+                            errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                            prevLexema = expectedLexemes;
                             break;
                         }
-
-                        while (lexemesIndex < lexemes.Count && lexemes[lexemesIndex].Text == " ")
+                    case 1: // const
                         {
-                            currentPos += lexemes[lexemesIndex].Text.Length;
-
-                            lexemesIndex++;
-                        }
-
-                        if (lexemesIndex >= lexemes.Count)
-                        {
+                            expectedLexemes = LexemaTypes.dict[2];
+                            int position = lexemes[i - 1].Position + lexemes[i - 1].Text.Length;
+                            errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                            prevLexema = expectedLexemes;
                             break;
                         }
-
-                        if (lexemes[lexemesIndex].LexemaType.Code == currentLexemaCode)
+                    case 2: // val
                         {
-                            if (lexemes[lexemesIndex].LexemaType.Code == 9)
-                            {
-                                currentPos++;
-                            }
-
-                            currentPos += lexemes[lexemesIndex].Text.Length;
-                            lexemesIndex++;
+                            expectedLexemes = LexemaTypes.dict[4];
+                            int position = lexemes[i - 1].Position + lexemes[i - 1].Text.Length;
+                            errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                            prevLexema = expectedLexemes;
+                            break;
                         }
-                        else
+                    case 3: // Double
                         {
-                            errors.Add(new Error(currentPos - 1, $"Ожидается {LexemaTypes.dict[currentLexemaCode].Name}"));
+                            expectedLexemes = LexemaTypes.dict[6];
+                            int position = lexemes[i - 1].Position + lexemes[i - 1].Text.Length;
+                            errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                            prevLexema = expectedLexemes;
+                            break;
                         }
-                    }
-                    else
-                    {
-                        errors.Add(new Error(currentPos - 1, $"Ожидается {LexemaTypes.dict[currentLexemaCode].Name}"));
-                    }
-
-                    if (i == correctString.Length - 1)
-                    {
-                        k++;
-                    }
+                    case 4: // identificator
+                        {
+                            expectedLexemes = LexemaTypes.dict[7];
+                            int position = lexemes[i - 1].Position + lexemes[i - 1].Text.Length;
+                            errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                            prevLexema = expectedLexemes;
+                            break;
+                        }
+                    case 6: // =
+                        {
+                            expectedLexemes = LexemaTypes.dict[8];
+                            int position = lexemes[i - 1].Position + lexemes[i - 1].Text.Length;
+                            errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                            prevLexema = expectedLexemes;
+                            break;
+                        }
+                    case 7: // :
+                        {
+                            expectedLexemes = LexemaTypes.dict[3];
+                            int position = lexemes[i - 1].Position + lexemes[i - 1].Text.Length;
+                            errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                            prevLexema = expectedLexemes;
+                            break;
+                        }
+                    case 8: // double number
+                        {
+                            expectedLexemes = LexemaTypes.dict[9];
+                            int position = lexemes[i - 1].Position + lexemes[i - 1].Text.Length;
+                            errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                            prevLexema = expectedLexemes;
+                            break;
+                        }
+                    case 10: // \n
+                        {
+                            return;
+                        }
                 }
             }
         }

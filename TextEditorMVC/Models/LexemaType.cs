@@ -25,12 +25,13 @@ namespace TextEditorMVC.Models
             { 1, new LexemaType(1, "ключевое слово - const") },
             { 2, new LexemaType(2, "ключевое слово - val") },
             { 3, new LexemaType(3, "ключевое слово - Double") },
-            { 4, new LexemaType(4, "иденификатор") },
+            { 4, new LexemaType(4, "идентификатор") },
             { 5, new LexemaType(5, "разделитель - пробел") },
-            { 6, new LexemaType(6, "оператор присвивания - '='") },
-            { 7, new LexemaType(7, "оператор приндлежности к типу - ':'") },
+            { 6, new LexemaType(6, "оператор присваивания - '='") },
+            { 7, new LexemaType(7, "оператор принадлежности к типу - ':'") },
             { 8, new LexemaType(8, "вещественное число") },
-            { 9, new LexemaType(9, "конец оператора - переход на новую строку") },
+            { 9, new LexemaType(9, "конец оператора - ';'") },
+            { 10, new LexemaType(10, "переход на новую строку") },
         };
     }
 
