@@ -36,7 +36,7 @@ namespace TextEditorMVC
 
                 switch (prevLexema.Code)
                 {
-                    case 0: // Def
+                    case 0: // Def -> 'const' <Const>
                         {
                             expectedLexemes.AddRange(new List<LexemaType> {
                                 LexemaTypes.dict[5], LexemaTypes.dict[1] , LexemaTypes.dict[10] });
@@ -162,6 +162,8 @@ namespace TextEditorMVC
                     return;
                 }
                 // проверка текущей лексемы
+                // пробел конст вал
+                // конст вал юю
                 for (int j = 1; j < expectedLexemes.Count; j++)
                 {
                     // текущая лексема в списке нужных

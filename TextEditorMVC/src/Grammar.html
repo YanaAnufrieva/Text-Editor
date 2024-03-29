@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Грамматика</title>
+    <link rel="stylesheet" type="text/css" href="styles.css"/>
+</head>
+<body>
+    <h1>Грамматика</h1>
+    <p>Определим грамматику вещественных констант языка Kotlin G[‹DEF›] в нотации Хомского с продукциями P:</p>
+    <ol>
+        <li>‹DEF› -> 'const' ‹CONST›</li>
+        <li>‹CONST› -> ' ' ‹SPACE›</li>
+        <li>‹SPACE› -> 'val' ‹VAL›<</li>
+        <li>‹VAL› -> ' ' ‹ID›</li>
+        <li>‹ID› -> (‹Letter›|'_') ‹IDREM›</li>
+        <li>‹IDREM› -> (‹Letter›|'_'|‹Digit›) ‹IDREM›</li>
+        <li>‹IDREM› -> ':' ‹TYPE›</li>
+        <li>‹TYPE› -> '‹Double' ‹EQUAL›</li>
+        <li>‹EQUAL› -> '=' ‹DOUBLE›</li>
+        <li>‹DOUBLE› -> [+|-] ‹NUMBER›</li>
+        <li>‹NUMBER› -> ‹Digit› ‹NUMBERREM›</li>
+        <li>‹NUMBERREM› -> ‹Digit› ‹NUMBERREM› | ';'</li>
+        <li>‹NUMBERREM› -> '.' ‹DECIMAL›</li>
+        <li>‹DECIMAL› -> ‹Digit› ‹DECIMALREM›</li>
+        <li>‹DECIMALREM› -> ‹Digit› ‹DECIMALREM› | ';'</li>
+    </ol>
+    <ul>
+        <li>‹Digit› → “0” | “1” | “2” | “3” | “4” | “5” | “6” | “7” | “8” | “9”</li>
+        <li>‹Letter› → “a” | “b” | “c” | ... | “z” | “A” | “B” | “C” | ... | “Z”</li>
+    </ul>
+    <p>Следуя введенному формальному определению грамматики, представим G[‹DEF›] ее составляющими:</p>
+    <ul>
+        <li>Z = ‹DEF›;</li>
+        <li>VT = {a, b, c, ..., z, A, B, C, ..., Z, _, =, +, -, ;, ., 0, 1, 2, ..., 9};</li>
+        <li>VN = {‹DEF›, ‹CONST›, ‹SPACE›, ‹VAL›, ‹ID›, ‹IDREM›, ‹TYPE›, ‹EQUAL›, ‹DOUBLE›, ‹NUMBER›, ‹NUMBERREM›, ‹DECIMAL›, ‹DECIMALREM›}.</li>
+    </ul>
+</body>
+</html>

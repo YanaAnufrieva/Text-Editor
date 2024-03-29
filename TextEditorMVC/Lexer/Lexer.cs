@@ -131,6 +131,13 @@ namespace TextEditorMVC
 
                     if (IsRealNumber(subText))
                     {
+                        if (subText[^1] == '.')
+                        {
+                            code = code.Replace(subText, subText + '0');
+                            subText += '0';
+                            j++;
+                        }
+
                         lexemes.Add(new LexemaInfo(subText, i, LexemaTypes.dict[8]));
                     }
                     else
@@ -223,10 +230,6 @@ namespace TextEditorMVC
 
         static bool IsRealNumber(string text)
         {
-            if (text[^1] == '.')
-            {
-                return false;
-            }
             return double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedDoubleNumber);
         }
     }

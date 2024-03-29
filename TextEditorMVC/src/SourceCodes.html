@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Исходный код программы</title>
+    <link rel="stylesheet" type="text/css" href="styles.css" />
+</head>
+
+<body>
+    <h1>Исходный код программы</h1>
+
+    <h2>MainWindow.xaml.cs</h2>
+    <pre>using System.Windows;
+        using System.Windows.Controls;
+        using System.Windows.Input;
+        using System.Windows.Media;
+        
+        namespace TextEditorMVC
+        {
+            /// <summary>
+            /// Interaction logic for MainWindow.xaml
+            /// </summary>
+            public partial class MainWindow : Window
+            {
+                FilesController filesController = new FilesController();
+                LexerController lexerController = new LexerController();
+                ParserController parserController = new ParserController();
+                ErrorNeutralizerController errorNeutralizerController = new ErrorNeutralizerController();
+                public MainWindow()
+                {
+                    InitializeComponent();
+        
+                    TabControlFiles.Items.Clear();
+                    InitializeComboBoxFontSizes();
+        
+                    TextBoxCurrentLanguage.Text = "Язык ввода: " + InputLanguageManager.Current.CurrentInputLanguage.DisplayName;
+        
+                    System.Windows.Input.InputLanguageManager.Current.InputLanguageChanged += new InputLanguageEventHandler((sender, e) =>
+                    {
+                        TextBoxCurrentLanguage.Text = "Язык ввода: " + e.NewLanguage.DisplayName;
+                    });
+                }
+        
+                private void CreateFile_Click(object sender, RoutedEventArgs e)
+                {
+                    if (filesController.Files.Count > 0)
+                    {
+                        AskToSave();
+                    }
+        
+                    if (filesController.CreateFile())
+                    {
+                        CreateNewTab(filesController.OpenedFile.FileName, filesController.OpenedFile.Content);
+                        TabControlFiles.SelectedIndex = TabControlFiles.Items.Count - 1;
+                    }
+                }
+        
+                private void OpenFile_Click(object sender, RoutedEventArgs e)
+                {
+                    if (filesController.Files.Count > 0)
+                    {
+                        AskToSave();
+                    }
+        
+                    if (filesController.OpenFile())
+                    {
+                        CreateNewTab(filesController.OpenedFile.FileName, filesController.OpenedFile.Content);
+                        TabControlFiles.SelectedIndex = TabControlFiles.Items.Count - 1;
+                    }
+                }
+        
+                private void SaveFile_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+        
+                    TabItem currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
+                    String content = ((TextBox)currentItem.Content).Text;
+        
+                    filesController.SaveFile();
+                }
+        
+                private void SaveAsFile_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+        
+                    TabItem currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
+        
+                    String content = ((TextBox)currentItem.Content).Text;
+        
+                    filesController.SaveAsFile();
+        
+        
+                    if (((TextBlock)((StackPanel)currentItem.Header).Children[0]).Text != filesController.OpenedFile.FileName)
+                    {
+                        ((TextBlock)((StackPanel)currentItem.Header).Children[0]).Text = filesController.OpenedFile.FileName;
+                    }
+                }
+        
+                private void CloseFile_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+        
+                    DependencyObject dep = (DependencyObject)e.OriginalSource;
+                    // Traverse the visual tree looking for TabItem
+                    while ((dep != null) && !(dep is TabItem))
+                        dep = VisualTreeHelper.GetParent(dep);
+        
+                    if (dep == null)
+                    {
+                        // Didn't find TabItem
+                        return;
+                    }
+        
+                    TabItem? ti = dep as TabItem;
+        
+                    TabControlFiles.SelectedItem = ti;
+        
+                    AskToSave();
+        
+                    filesController.CloseFile();
+        
+                    TabControlFiles.Items.Remove(ti);
+                }
+        
+                private void ExitFile_Click(object sender, RoutedEventArgs e)
+                {
+                    System.Windows.Application.Current.Shutdown();
+                }
+        
+                private void TabControlFiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
+                {
+                    if (TabControlFiles.SelectedIndex < 0) return;
+        
+                    filesController.OpenedFile = filesController.Files[TabControlFiles.SelectedIndex];
+        
+                    MoveCursorToEndInputTextBox();
+                }
+        
+                private void CreateNewTab(string tabHeader, string tabContent)
+                {
+                    TabItem tabItem = new TabItem();
+        
+                    // header
+                    StackPanel stackPanel = new StackPanel();
+                    stackPanel.Orientation = Orientation.Horizontal;
+        
+                    TextBlock header = new TextBlock();
+                    header.Text = tabHeader;
+                    header.Margin = new Thickness(0, 0, 5, 0);
+        
+                    Button close = new Button();
+                    close.Content = "X";
+                    close.Background = new SolidColorBrush(Colors.Transparent);
+                    close.BorderBrush = new SolidColorBrush(Colors.Transparent);
+                    close.FontSize = 10;
+                    close.Padding = new Thickness(5, 0, 5, 0);
+                    close.Click += CloseFile_Click;
+        
+                    stackPanel.Children.Add(header);
+                    stackPanel.Children.Add(close);
+        
+                    // content
+                    TextBox textBox = new TextBox();
+                    textBox.Text = tabContent;
+                    textBox.FontSize = (double)ComboBoxFontSizes.SelectedItem * 96 / 72;
+                    textBox.TextChanged += TextBoxInput_TextChanged;
+        
+                    tabItem.Header = stackPanel;
+                    tabItem.Content = textBox;
+        
+                    tabItem.AllowDrop = true;
+        
+                    TabControlFiles.Items.Add(tabItem);
+                }
+        
+                private void TextBoxInput_TextChanged(object sender, TextChangedEventArgs e)
+                {
+                    string currentText = ((TextBox)sender).Text;
+                    TextHelper.Text = currentText;
+                    filesController.OpenedFileTextChanged(currentText);
+                }
+        
+                private void Undo_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+        
+                    TabItem currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
+        
+                    filesController.OpenedFileTextUndo();
+        
+                    ((TextBox)currentItem.Content).Text = filesController.OpenedFile.Content;
+        
+                    MoveCursorToEndInputTextBox();
+                }
+        
+                private void Redo_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+        
+                    TabItem currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
+        
+                    filesController.OpenedFileTextRedo();
+        
+                    ((TextBox)currentItem.Content).Text = filesController.OpenedFile.Content;
+        
+                    MoveCursorToEndInputTextBox();
+                }
+        
+                private void Cut_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+                    if (((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectedText != "")
+                        // Cut the selected text in the control and paste it into the Clipboard.
+                        ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).Cut();
+        
+                    FocusOnInputTextBox();
+                }
+        
+                private void Copy_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+                    if (((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectedText != "")
+                        // Cut the selected text in the control and paste it into the Clipboard.
+                        ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).Copy();
+        
+                    FocusOnInputTextBox();
+                }
+        
+                private void Paste_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+                    if (Clipboard.GetDataObject().GetDataPresent(DataFormats.Text) == true)
+                    {
+                        if (((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectionLength > 0)
+                        {
+                            ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectionStart
+                                = ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectionStart
+                                + ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectionLength;
+                        }
+                        ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).Paste();
+                    }
+        
+                    FocusOnInputTextBox();
+                }
+        
+                private void Delete_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+                    if (((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectionLength > 0)
+                    {
+                        ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectedText = "";
+                    }
+        
+                    FocusOnInputTextBox();
+                }
+        
+                private void SelectAll_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+                    ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectAll();
+        
+                    FocusOnInputTextBox();
+                }
+        
+                private void FocusOnInputTextBox()
+                {
+                    ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).Focus();
+                }
+        
+                private void MoveCursorToEndInputTextBox()
+                {
+                    FocusOnInputTextBox();
+        
+                    ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectionStart =
+                    ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).Text.Length;
+                    ((TextBox)((TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex]).Content).SelectionLength = 0;
+                }
+        
+                private void Help_Click(object sender, RoutedEventArgs e)
+                {
+                    Help help = new Help();
+                    help.ShowDialog();
+                }
+        
+                private void About_Click(object sender, RoutedEventArgs e)
+                {
+                    AboutProgram aboutProgram = new AboutProgram();
+                    aboutProgram.ShowDialog();
+                }
+        
+                private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+                {
+        
+                }
+        
+                private void AskToSave()
+                {
+                    if (filesController.IsContentChanged())
+                    {
+                        if (MessageBox.Show("Сохранить изменения в файле?", "Сохранение",
+                            MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                        {
+                            filesController.SaveFile();
+                        }
+                    }
+                }
+        
+                private void InitializeComboBoxFontSizes()
+                {
+                    ComboBoxFontSizes.Items.Add(8.0);
+                    ComboBoxFontSizes.Items.Add(10.0);
+                    ComboBoxFontSizes.Items.Add(12.0);
+                    ComboBoxFontSizes.Items.Add(14.0);
+                    ComboBoxFontSizes.Items.Add(16.0);
+        
+                    ComboBoxFontSizes.SelectedItem = 12.0;
+                }
+        
+                private void ComboBoxFontSizes_SelectionChanged(object sender, SelectionChangedEventArgs e)
+                {
+                    foreach (TabItem ti in TabControlFiles.Items)
+                    {
+                        ((TextBox)ti.Content).FontSize = (double)ComboBoxFontSizes.SelectedItem * 96 / 72;
+                    }
+                }
+        
+                private void Window_Drop(object sender, DragEventArgs e)
+                {
+                    if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                    {
+                        string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
+        
+                        // Обрабатывайте каждый перетащенный файл
+                        foreach (string file in files)
+                        {
+                            if (System.IO.File.Exists(file) && System.IO.Path.GetExtension(file).Equals(".txt", StringComparison.OrdinalIgnoreCase))
+                            {
+                                if (filesController.Files.Count > 0)
+                                {
+                                    AskToSave();
+                                }
+        
+                                if (filesController.OpenFile(file))
+                                {
+                                    CreateNewTab(filesController.OpenedFile.FileName, filesController.OpenedFile.Content);
+                                    TabControlFiles.SelectedIndex = TabControlFiles.Items.Count - 1;
+                                }
+                            }
+                        }
+                    }
+                }
+        
+                private void Window_DragEnter(object sender, DragEventArgs e)
+                {
+                    if (e.Data.GetDataPresent(DataFormats.FileDrop))
+                    {
+                        e.Effects = DragDropEffects.Copy;
+                    }
+                    else
+                    {
+                        e.Effects = DragDropEffects.None;
+                    }
+                }
+        
+                private void Start_Click(object sender, RoutedEventArgs e)
+                {
+                    if (TabControlFiles.Items.Count == 0) return;
+        
+                    TextHelper.Text = filesController.OpenedFile.Content;
+                    if (lexerController.LexicalAnalysis(filesController.OpenedFile.Content))
+                    {
+                        DataGridOutput.ItemsSource = null;
+                        DataGridOutput.ItemsSource = lexerController.GetLexemesVM();
+                        TabControlOutput.SelectedIndex = 1;
+        
+                        TabItem currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
+                        ((TextBox)currentItem.Content).Text = lexerController.Code;
+        
+                        if (!parserController.SyntacticAnalysis(lexerController.GetLexemes()))
+                        {
+                            var errors = parserController.GetErrors();
+                            var correctedLexemes = errorNeutralizerController.NeutralizingErrors(lexerController.GetLexemes());
+        
+                            if (parserController.SyntacticAnalysis(correctedLexemes))
+                            {
+                                var result = MessageBox.Show("В тексте обнаружены ошибки! Исправить?", "Ошибки", MessageBoxButton.YesNo);
+                                if (result == MessageBoxResult.Yes)
+                                {
+                                    currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
+                                    ((TextBox)currentItem.Content).Text = TextHelper.CreateTextFromLexemes(correctedLexemes);
+        
+                                    lexerController.LexicalAnalysis(filesController.OpenedFile.Content);
+                                    DataGridOutput.ItemsSource = null;
+                                    DataGridErrors.ItemsSource = null;
+                                    DataGridOutput.ItemsSource = lexerController.GetLexemesVM();
+                                    TabControlOutput.SelectedIndex = 1;
+                                }
+                                else
+                                {
+                                    DataGridErrors.ItemsSource = null;
+                                    DataGridErrors.ItemsSource = errors;
+                                    TabControlOutput.SelectedIndex = 0;
+                                }
+                            }
+                            else
+                            {
+                                DataGridErrors.ItemsSource = null;
+                                DataGridErrors.ItemsSource = errors;
+                                TabControlOutput.SelectedIndex = 0;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        DataGridErrors.ItemsSource = null;
+                        DataGridErrors.ItemsSource = lexerController.GetErrors();
+                        TabControlOutput.SelectedIndex = 0;
+                    }
+                }
+            }
+        }</pre>
+
+    <h2>Help.xaml.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        using System.Windows;
+        using System.Windows.Controls;
+        using System.Windows.Data;
+        using System.Windows.Documents;
+        using System.Windows.Input;
+        using System.Windows.Media;
+        using System.Windows.Media.Imaging;
+        using System.Windows.Shapes;
+        
+        namespace TextEditorMVC
+        {
+            /// <summary>
+            /// Логика взаимодействия для Help.xaml
+            /// </summary>
+            public partial class Help : Window
+            {
+                public Help()
+                {
+                    InitializeComponent();
+                }
+            }
+        }
+        </pre>
+
+    <h2>AssemblyInfo.cs</h2>
+    <pre>using System.Windows;
+
+        [assembly: ThemeInfo(
+            ResourceDictionaryLocation.None,            //where theme specific resource dictionaries are located
+                                                        //(used if a resource is not found in the page,
+                                                        // or application resource dictionaries)
+            ResourceDictionaryLocation.SourceAssembly   //where the generic resource dictionary is located
+                                                        //(used if a resource is not found in the page,
+                                                        // app, or any theme specific resource dictionaries)
+        )]
+        </pre>
+
+    <h2>AboutProgram.xaml.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        using System.Windows;
+        using System.Windows.Controls;
+        using System.Windows.Data;
+        using System.Windows.Documents;
+        using System.Windows.Input;
+        using System.Windows.Media;
+        using System.Windows.Media.Imaging;
+        using System.Windows.Shapes;
+        
+        namespace TextEditorMVC
+        {
+            /// <summary>
+            /// Логика взаимодействия для AboutProgram.xaml
+            /// </summary>
+            public partial class AboutProgram : Window
+            {
+                public AboutProgram()
+                {
+                    InitializeComponent();
+                }
+            }
+        }
+        </pre>
+
+    <h2>LexemaVM.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        
+        namespace TextEditorMVC.Models
+        {
+            internal class LexemaVM
+            {
+                public int Line { get; set; }
+                public int StartPosition { get; set; }
+                public int EndPosition { get; set; }
+                public int Code { get; set; }
+                public string Name { get; set; }
+                public string Text { get; set; }
+            }
+        }
+        </pre>
+
+    <h2>ErrorVM.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        
+        namespace TextEditorMVC.Models
+        {
+            internal class ErrorVM
+            {
+                public int Line { get; set; }
+                public int Symbol { get; set; }
+                public string ErrorMessage { get; set; }
+            }
+        }
+        </pre>
+
+    <h2>ParserController.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Collections.ObjectModel;
+        using System.Diagnostics.Metrics;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        using TextEditorMVC.Models;
+        
+        namespace TextEditorMVC
+        {
+            internal class ParserController
+            {
+                Parser parser;
+        
+                public bool SyntacticAnalysis(List<LexemaInfo> lexemes)
+                {
+                    if (lexemes == null || lexemes.Count == 0) return false;
+        
+                    parser = new Parser(lexemes);
+                    parser.SyntacticAnalysis();
+        
+                    if (parser.Errors.Count == 0)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+        
+                public ObservableCollection<ErrorVM> GetErrors()
+                {
+                    if (parser.Errors.Count > 0)
+                    {
+                        ObservableCollection<ErrorVM> errors = new ObservableCollection<ErrorVM>();
+        
+                        foreach (Error error in parser.Errors)
+                        {
+                            Tuple<int, int> pos = TextHelper.GetPosition(error.Position);
+        
+                            ErrorVM item = new ErrorVM()
+                            {
+                                Line = pos.Item2,
+                                Symbol = pos.Item1,
+                                ErrorMessage = error.ErrorMessage,
+                            };
+        
+                            errors.Add(item);
+                        }
+        
+                        return errors;
+                    }
+        
+                    return new ObservableCollection<ErrorVM>();
+                }
+            }
+        }
+        </pre>
+
+    <h2>Parser.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        using TextEditorMVC.Models;
+        
+        namespace TextEditorMVC
+        {
+            internal class Parser
+            {
+                private List<LexemaInfo> lexemes = new();
+                private List<Error> errors = new();
+        
+                LexemaType prevLexema;
+                private int i = 0;
+        
+        
+                public List<Error> Errors { get { return errors; } }
+        
+                public Parser(List<LexemaInfo> lexemes)
+                {
+                    this.lexemes = lexemes;
+                }
+        
+        
+                public bool SyntacticAnalysis()
+                {
+                    errors = new List<Error>();
+        
+                    prevLexema = new LexemaType(0, "Def");
+        
+                    while (i < lexemes.Count)
+                    {
+                        List<LexemaType> expectedLexemes = new List<LexemaType>();
+        
+                        switch (prevLexema.Code)
+                        {
+                            case 0: // Def -> 'const' <Const>
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> { 
+                                        LexemaTypes.dict[5], LexemaTypes.dict[1] , LexemaTypes.dict[10] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                            case 1: // const
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> {
+                                        LexemaTypes.dict[5], LexemaTypes.dict[2] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                            case 2: // val
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> {
+                                        LexemaTypes.dict[5], LexemaTypes.dict[4] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                            case 3: // Double
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> {
+                                        LexemaTypes.dict[5], LexemaTypes.dict[6] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                            case 4: // identificator
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> {
+                                        LexemaTypes.dict[5], LexemaTypes.dict[7] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                            case 6: // =
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> {
+                                        LexemaTypes.dict[5], LexemaTypes.dict[8] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                            case 7: // :
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> {
+                                        LexemaTypes.dict[5], LexemaTypes.dict[3] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                            case 8: // double number
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> {
+                                        LexemaTypes.dict[5], LexemaTypes.dict[9] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                            case 9: // ;
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> {
+                                        LexemaTypes.dict[5], LexemaTypes.dict[1], LexemaTypes.dict[10] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                            case 10: // \n
+                                {
+                                    expectedLexemes.AddRange(new List<LexemaType> {
+                                        LexemaTypes.dict[5], LexemaTypes.dict[1], LexemaTypes.dict[10] });
+                                    CheckLexema(expectedLexemes);
+        
+                                    break;
+                                }
+                        }
+                    }
+        
+                    EndExpression();
+        
+                    if (errors.Count != 0)
+                    {
+                        return false;
+                    }
+        
+                    return true;
+                }
+        
+                // провекра лексемы
+                private void CheckLexema(List<LexemaType> expectedLexemes)
+                {
+                    // в нужных лексемах нет пробела - в списке одна лексема
+                    if (expectedLexemes[0] != LexemaTypes.dict[5])
+                    {
+                        // текущая лексема подходит
+                        if (lexemes[i].LexemaType == expectedLexemes[0])
+                        {
+                            prevLexema = lexemes[i].LexemaType;
+                            i++;
+                        }
+                        // текущая лексема не подходит
+                        else
+                        {
+                            Error error = new(lexemes[i].Position, $"Ожидается {expectedLexemes[1].Name}");
+                            errors.Add(error);
+                            prevLexema = expectedLexemes[0];
+                        }
+                    }
+                    else
+                    {
+                        // пропускаем пробелы
+                        while (i < lexemes.Count && lexemes[i].LexemaType == expectedLexemes[0])
+                        {
+                            i++;
+                        }
+                        // вышли за границу
+                        if (i >= lexemes.Count)
+                        {
+                            return;
+                        }
+                        // проверка текущей лексемы
+                        // пробел конст вал
+                        // конст вал юю
+                        for (int j = 1; j < expectedLexemes.Count; j++)
+                        {
+                            // текущая лексема в списке нужных
+                            if (lexemes[i].LexemaType == expectedLexemes[j])
+                            {
+                                prevLexema = lexemes[i].LexemaType;
+                                i++;
+                                return;
+                            }
+                        }
+                        // текущая лексема не подходит
+                        Error error = new(lexemes[i].Position, $"Ожидается {expectedLexemes[1].Name}");
+                        errors.Add(error);
+                        prevLexema = expectedLexemes[1];
+                    }
+                }
+        
+                // функция добавляет ошибки если выражение не закончено
+                private void EndExpression()
+                {
+                    while (prevLexema != LexemaTypes.dict[9])
+                    {
+                        LexemaType expectedLexemes;
+        
+                        switch (prevLexema.Code)
+                        {
+                            case 0: // Def
+                                {
+                                    expectedLexemes = LexemaTypes.dict[5];
+                                    int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
+                                    errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                                    prevLexema = expectedLexemes;
+                                    break;
+                                }
+                            case 1: // const
+                                {
+                                    expectedLexemes = LexemaTypes.dict[2];
+                                    int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
+                                    errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                                    prevLexema = expectedLexemes;
+                                    break;
+                                }
+                            case 2: // val
+                                {
+                                    expectedLexemes = LexemaTypes.dict[4];
+                                    int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
+                                    errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                                    prevLexema = expectedLexemes;
+                                    break;
+                                }
+                            case 3: // Double
+                                {
+                                    expectedLexemes = LexemaTypes.dict[6];
+                                    int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
+                                    errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                                    prevLexema = expectedLexemes;
+                                    break;
+                                }
+                            case 4: // identificator
+                                {
+                                    expectedLexemes = LexemaTypes.dict[7];
+                                    int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
+                                    errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                                    prevLexema = expectedLexemes;
+                                    break;
+                                }
+                            case 6: // =
+                                {
+                                    expectedLexemes = LexemaTypes.dict[8];
+                                    int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
+                                    errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                                    prevLexema = expectedLexemes;
+                                    break;
+                                }
+                            case 7: // :
+                                {
+                                    expectedLexemes = LexemaTypes.dict[3];
+                                    int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
+                                    errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                                    prevLexema = expectedLexemes;
+                                    break;
+                                }
+                            case 8: // double number
+                                {
+                                    expectedLexemes = LexemaTypes.dict[9];
+                                    int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
+                                    errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+                                    prevLexema = expectedLexemes;
+                                    break;
+                                }
+                            case 10: // \n
+                                {
+                                    return;
+                                }
+                        }
+                    }
+                }
+            }
+        }
+        </pre>
+
+    <h2>LexerController.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Collections.ObjectModel;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        using TextEditorMVC.Models;
+        
+        namespace TextEditorMVC
+        {
+            internal class LexerController
+            {
+                Lexer lexer;
+        
+                public string Code
+                {
+                    get { return lexer.Code; }
+                }
+        
+                public bool LexicalAnalysis(string code)
+                {
+                    if (code == null || code.Length == 0) return false;
+        
+                    lexer = new Lexer(code);
+                    lexer.LexicalAnalysis();
+        
+                    if (lexer.Errors.Count == 0)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+        
+                public List<LexemaInfo> GetLexemes()
+                {
+                    return lexer.Lexemes;
+                }
+        
+                public ObservableCollection<LexemaVM> GetLexemesVM()
+                {
+                    if (lexer.Lexemes.Count > 0)
+                    {
+                        ObservableCollection<LexemaVM> lexemes = new ObservableCollection<LexemaVM>();
+        
+                        foreach (LexemaInfo lexema in lexer.Lexemes)
+                        {
+                            Tuple<int, int> pos = TextHelper.GetPosition(lexema.Position);
+        
+                            LexemaVM item = new LexemaVM()
+                            {
+                                Line = pos.Item2,
+                                StartPosition = pos.Item1,
+                                EndPosition = pos.Item1 + lexema.Text.Length - 1,
+                                Code = lexema.LexemaType.Code,
+                                Name = lexema.LexemaType.Name,
+                                Text = lexema.Text,
+                            };
+        
+                            lexemes.Add(item);
+                        }
+        
+                        return lexemes;
+                    }
+                    return new ObservableCollection<LexemaVM>();
+                }
+        
+                public ObservableCollection<ErrorVM> GetErrors()
+                {
+                    if (lexer.Errors.Count > 0)
+                    {
+                        ObservableCollection<ErrorVM> errors = new ObservableCollection<ErrorVM>();
+        
+                        foreach (Error error in lexer.Errors)
+                        {
+                            Tuple<int, int> pos = TextHelper.GetPosition(error.Position);
+        
+                            ErrorVM item = new ErrorVM()
+                            {
+                                Line = pos.Item2,
+                                Symbol = pos.Item1,
+                                ErrorMessage = error.ErrorMessage,
+                            };
+        
+                            errors.Add(item);
+                        }
+        
+                        return errors;
+                    }
+                    return new ObservableCollection<ErrorVM>();
+                }
+            }
+        }
+        </pre>
+
+    <h2>Lexer.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.ComponentModel;
+        using System.Globalization;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        using System.Windows.Controls;
+        using TextEditorMVC.Models;
+        using System.CodeDom.Compiler;
+        
+        namespace TextEditorMVC
+        {
+            internal class Lexer
+            {
+                List<LexemaInfo> lexemes = new();
+                List<Error> errors = new();
+                string code;
+        
+                public List<LexemaInfo> Lexemes
+                {
+                    get { return lexemes; }
+                }
+        
+                public List<Error> Errors
+                {
+                    get { return errors; }
+                }
+                public string Code
+                {
+                    get { return code; }
+                }
+        
+                public Lexer(string code)
+                {
+                    this.code = code;
+                }
+        
+                public void LexicalAnalysis()
+                {
+                    lexemes = new();
+                    errors = new();
+        
+                    string subText = "";
+        
+                    int i = 0;
+                    while (i < code.Length)
+                    {
+                        if (Char.IsLetter(code[i]))
+                        {
+                            int j = i + 1;
+                            while (Char.IsLetter(code[j]) || Char.IsDigit(code[j]) || code[j] == '_')
+                            {
+                                j++;
+                                if (j >= code.Length)
+                                {
+                                    break;
+                                }
+                            }
+                            subText = code.Substring(i, j - i);
+        
+                            if (IsKeywordConst(subText))
+                            {
+                                lexemes.Add(new LexemaInfo(subText, i, LexemaTypes.dict[1]));
+                            }
+                            else if (IsKeywordVal(subText))
+                            {
+                                lexemes.Add(new LexemaInfo(subText, i, LexemaTypes.dict[2]));
+                            }
+                            else if (IsKeywordDouble(subText))
+                            {
+                                lexemes.Add(new LexemaInfo(subText, i, LexemaTypes.dict[3]));
+                            }
+                            else if (IsVariableName(subText))
+                            {
+                                lexemes.Add(new LexemaInfo(subText, i, LexemaTypes.dict[4]));
+                            }
+                            else
+                            {
+                                errors.Add(new Error(i, $"Ошибка в названии идентификатора"));
+                            }
+                            i = j;
+                        }
+                        else if (code[i] == '_')
+                        {
+                            int j = i + 1;
+                            while (Char.IsLetter(code[j]) || Char.IsDigit(code[j]) || code[j] == '_')
+                            {
+                                j++;
+                                if (j >= code.Length)
+                                {
+                                    break;
+                                }
+                            }
+                            subText = code.Substring(i, j - i);
+        
+                            if (IsVariableName(subText))
+                            {
+                                lexemes.Add(new LexemaInfo(subText, i, LexemaTypes.dict[4]));
+                            }
+                            i = j;
+                        }
+                        else if (IsSpace(code[i].ToString()))
+                        {
+                            lexemes.Add(new LexemaInfo(code[i].ToString(), i, LexemaTypes.dict[5]));
+                            i++;
+                        }
+                        else if (IsAssignmentOperator(code[i].ToString()))
+                        {
+                            lexemes.Add(new LexemaInfo(code[i].ToString(), i, LexemaTypes.dict[6]));
+                            i++;
+                        }
+                        else if (IsColon(code[i].ToString()))
+                        {
+                            lexemes.Add(new LexemaInfo(code[i].ToString(), i, LexemaTypes.dict[7]));
+                            i++;
+                        }
+                        else if (Char.IsNumber(code[i]) || code[i] == '+' || code[i] == '-')
+                        {
+                            int j = i + 1;
+                            while (Char.IsNumber(code[j]) || code[j] == '.')
+                            {
+                                j++;
+                                if (j >= code.Length)
+                                {
+                                    break;
+                                }
+                            }
+        
+                            subText = code.Substring(i, j - i);
+        
+                            if (IsRealNumber(subText))
+                            {
+                                if (subText[^1] == '.')
+                                {
+                                    code = code.Replace(subText, subText + '0');
+                                    subText += '0';
+                                    j++;
+                                }
+        
+                                lexemes.Add(new LexemaInfo(subText, i, LexemaTypes.dict[8]));
+                            }
+                            else
+                            {
+                                errors.Add(new Error(i, $"Ошибка в написании вещественного числа."));
+                            }
+        
+                            i = j;
+                        }
+                        else if (IsSemicolon(code[i].ToString()))
+                        {
+                            lexemes.Add(new LexemaInfo(";", i, LexemaTypes.dict[9]));
+                            i++;
+                        }
+                        else if (IsNewLine(code[i].ToString()))
+                        {
+                            lexemes.Add(new LexemaInfo("\\n", i, LexemaTypes.dict[10]));
+                            i++;
+                        }
+                        else if (code[i] == '\r')
+                        {
+                            int j = i + 1;
+                            if (IsNewLine(code[j].ToString()))
+                            {
+                                lexemes.Add(new LexemaInfo("\\n", i, LexemaTypes.dict[10]));
+                            }
+                            i = j + 1;
+                        }
+                        else
+                        {
+                            errors.Add(new Error(i, $"Ошибка: недопустимый символ"));
+                            i++;
+                        }
+                    }
+                }
+        
+                bool IsSemicolon(string text)
+                {
+                    return (text == ";");
+                }
+        
+        
+                bool IsKeywordConst(string text)
+                {
+                    return (text == "const");
+                }
+        
+                bool IsKeywordVal(string text)
+                {
+                    return (text == "val");
+                }
+        
+                bool IsKeywordDouble(string text)
+                {
+                    return (text == "Double");
+                }
+        
+                bool IsVariableName(string text)
+                {
+                    CodeDomProvider provider = CodeDomProvider.CreateProvider("C#");
+                    if (provider.IsValidIdentifier(text))
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+        
+                bool IsSpace(string text)
+                {
+                    return (text == " ");
+                }
+        
+                bool IsAssignmentOperator(string text)
+                {
+                    return (text == "=");
+                }
+        
+                bool IsColon(string text)
+                {
+                    return (text == ":");
+                }
+        
+                bool IsNewLine(string text)
+                {
+                    return (text == "\n");
+                }
+        
+                static bool IsRealNumber(string text)
+                {
+                    return double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedDoubleNumber);
+                }
+            }
+        }
+        </pre>
+
+    <h2>FilesController.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Collections.ObjectModel;
+        using System.Linq;
+        using System.Security.RightsManagement;
+        using System.Text;
+        using System.Threading.Tasks;
+        using System.Windows.Documents;
+        
+        namespace TextEditorMVC
+        {
+            internal class FilesController
+            {
+                ObservableCollection<File> files = new();
+                File openedFile = new File();
+        
+                public ObservableCollection<File> Files
+                {
+                    get { return files; }
+                }
+                public File OpenedFile
+                {
+                    get { return openedFile; }
+                    set { openedFile = value; }
+                }
+        
+                public bool CreateFile()
+                {
+                    File tempFile = new File();
+                    if (tempFile.CreateFile())
+                    {
+                        files.Add(tempFile);
+                        openedFile = tempFile;
+        
+                        return true;
+                    }
+        
+                    return false;
+                }
+        
+                public bool OpenFile()
+                {
+                    File tempFile = new File();
+                    if (tempFile.OpenFile())
+                    {
+                        if (files.Contains(tempFile) != true)
+                        {
+                            files.Add(tempFile);
+                            openedFile = tempFile;
+        
+                            return true;
+                        }
+                    }
+        
+                    return false;
+                }
+        
+                public bool OpenFile(string path)
+                {
+                    File tempFile = new File();
+                    tempFile.OpenFile(path);
+        
+                    if (files.Contains(tempFile) != true)
+                    {
+                        files.Add(tempFile);
+                        openedFile = tempFile;
+        
+                        return true;
+                    }
+        
+                    return false;
+                }
+        
+                public void SaveFile()
+                {
+                    if (openedFile == null)
+                    {
+                        return;
+                    }
+        
+                    openedFile.SaveFile();
+                }
+        
+                public void SaveAsFile()
+                {
+                    if (openedFile == null)
+                    {
+                        return;
+                    }
+        
+                    openedFile.SaveAsFile();
+                }
+        
+                public void CloseFile()
+                {
+                    files.Remove(openedFile);
+                    if (files.Count == 0)
+                    {
+                        openedFile = new File();
+                    }
+                    else
+                    {
+                        openedFile = files[files.Count - 1];
+                    }
+                }
+        
+                public void OpenedFileTextChanged(string text)
+                {
+                    openedFile.Content = text;
+                    OpenedFile.UndoRedoManager.SaveState(text);
+                }
+        
+                public void OpenedFileTextUndo()
+                {
+                    string? text = OpenedFile.UndoRedoManager.Undo();
+                    if (text != null)
+                    {
+                        openedFile.Content = text;
+                    }
+                }
+        
+                public void OpenedFileTextRedo()
+                {
+                    string? text = OpenedFile.UndoRedoManager.Redo();
+                    if (text != null)
+                    {
+                        openedFile.Content = text;
+                    }
+                }
+        
+                public bool IsContentChanged()
+                {
+                    if (OpenedFile.Content == ReadContentFromPath(OpenedFile.Path))
+                    {
+                        return false;
+                    }
+                    return true;
+                }
+        
+                public string ReadContentFromPath(string path)
+                {
+                    return System.IO.File.ReadAllText(path);
+                }
+            }
+        }
+        </pre>
+
+    <h2>File.cs</h2>
+    <pre>using Microsoft.Win32;
+        using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        
+        namespace TextEditorMVC
+        {
+            internal class File
+            {
+                string fileName = "";
+                string path = "";
+                string content = "";
+        
+                public string FileName
+                {
+                    get { return fileName; }
+                    set
+                    {
+                        fileName = value;
+                    }
+                }
+                public string Path
+                {
+                    get { return path; }
+                    set
+                    {
+                        path = value;
+                    }
+                }
+                public string Content
+                {
+                    get { return content; }
+                    set
+                    {
+                        content = value;
+                    }
+                }
+        
+                UndoRedoManager undoRedoManager = new UndoRedoManager();
+                public UndoRedoManager UndoRedoManager { get { return undoRedoManager; } }
+        
+        
+                public override bool Equals(object? obj)
+                {
+                    if (obj == null || GetType() != obj.GetType())
+                    {
+                        return false;
+                    }
+        
+                    File other = (File)obj;
+                    return Path.Equals(other.Path);
+                }
+        
+                public override int GetHashCode()
+                {
+                    return Content.GetHashCode();
+                }
+        
+                public bool CreateFile()
+                {
+                    SaveFileDialog saveFileDialog = new SaveFileDialog();
+                    saveFileDialog.Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
+                    saveFileDialog.Title = "Выберите местоположение и введите имя файла";
+                    saveFileDialog.DefaultExt = ".txt";
+        
+                    bool? result = saveFileDialog.ShowDialog();
+        
+                    if (result == true)
+                    {
+                        string filePath = saveFileDialog.FileName;
+                        this.path = filePath;
+                        this.fileName = path.Split("\\").Last();
+        
+                        this.SaveFile();
+        
+                        undoRedoManager.SaveState(content);
+        
+                        return true;
+                    }
+        
+                    return false;
+                }
+        
+                public bool OpenFile()
+                {
+                    OpenFileDialog openFileDialog = new OpenFileDialog();
+                    openFileDialog.Filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*";
+        
+                    if (openFileDialog.ShowDialog() == true)
+                    {
+                        string filePath = openFileDialog.FileName;
+                        try
+                        {
+                            string fileContent = System.IO.File.ReadAllText(filePath);
+        
+                            this.path = filePath;
+                            this.fileName = filePath.Split("\\").Last();
+                            this.content = fileContent;
+        
+                            undoRedoManager.SaveState(content);
+        
+                            return true;
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    }
+                    return false;
+                }
+        
+                public void OpenFile(string filePath)
+                {
+                    this.path = filePath;
+                    this.fileName = filePath.Split("\\").Last();
+                    this.Content = System.IO.File.ReadAllText(filePath);
+                }
+        
+                public void SaveFile()
+                {
+                    if (path != null)
+                    {
+                        System.IO.File.WriteAllText(path, content);
+                    }
+                }
+        
+                public void SaveAsFile()
+                {
+                    SaveFileDialog saveFileDialog = new SaveFileDialog();
+                    saveFileDialog.Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
+                    saveFileDialog.FileName = fileName;
+        
+                    if (saveFileDialog.ShowDialog() == true)
+                    {
+                        string filePath = saveFileDialog.FileName;
+                        this.path = filePath;
+                        this.fileName = path.Split("\\").Last();
+        
+                        if (this.content != null)
+                        {
+                            System.IO.File.WriteAllText(filePath, this.content);
+                        }
+                        else
+                        {
+                            System.IO.File.WriteAllText(filePath, "");
+                        }
+                    }
+                }
+            }
+        }
+        </pre>
+
+    <h2>ErrorNeutralizerController.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        
+        namespace TextEditorMVC
+        {
+            internal class ErrorNeutralizerController
+            {
+                ErrorNeutralizer errorNeutralizer;
+        
+                public List<LexemaInfo> NeutralizingErrors(List<LexemaInfo> lexemes)
+                {
+                    errorNeutralizer = new(lexemes);
+        
+                    return errorNeutralizer.NeutralizingErrors();
+                }
+            }
+        }
+        </pre>
+
+    <h2>ErrorNeutralizer.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        using TextEditorMVC.Models;
+        
+        namespace TextEditorMVC
+        {
+            internal class ErrorNeutralizer
+            {
+                List<LexemaInfo> lexemes;
+        
+                public ErrorNeutralizer(List<LexemaInfo> lexemes)
+                {
+                    this.lexemes = lexemes;
+                }
+        
+                public List<LexemaInfo> NeutralizingErrors()
+                {
+                    int prevLexema = 0, currentLexema = 0;
+                    int i = 0;
+                    while (i <  lexemes.Count) 
+                    {
+                        if (lexemes[i].LexemaType != ExpectedLexema(currentLexema, prevLexema))
+                        {
+                            lexemes.RemoveAt(i);
+                        }
+                        else
+                        {
+                            prevLexema = currentLexema;
+                            currentLexema = lexemes[i].LexemaType.Code;
+                            i++;
+        
+                        }
+                    }
+        
+                    return lexemes;
+                }
+        
+                private LexemaType ExpectedLexema(int currentLexemaCode, int prevLexemaCode)
+                {
+                    if (currentLexemaCode == 0)
+                    {
+                        return LexemaTypes.dict[1];
+                    }
+                    else if (currentLexemaCode == 1)
+                    {
+                        return LexemaTypes.dict[5];
+                    }
+                    else if (currentLexemaCode == 2)
+                    {
+                        return LexemaTypes.dict[5];
+                    }
+                    else if (currentLexemaCode == 3)
+                    {
+                        return LexemaTypes.dict[6];
+                    }
+                    else if (currentLexemaCode == 4)
+                    {
+                        return LexemaTypes.dict[7];
+                    }
+                    else if (currentLexemaCode == 5)
+                    {
+                        if (prevLexemaCode == 1)
+                        {
+                            return LexemaTypes.dict[2];
+                        }
+                        else if (prevLexemaCode == 2)
+                        {
+                            return LexemaTypes.dict[4];
+                        }
+                    }
+                    else if (currentLexemaCode == 6)
+                    {
+                        return LexemaTypes.dict[8];
+                    }
+                    else if (currentLexemaCode == 7)
+                    {
+                        return LexemaTypes.dict[3];
+                    }
+                    else if (currentLexemaCode == 8)
+                    {
+                        return LexemaTypes.dict[9];
+                    }
+                    else if (currentLexemaCode == 9)
+                    {
+                        return LexemaTypes.dict[1];
+                    }
+                    else if (currentLexemaCode == 10)
+                    {
+                        return LexemaTypes.dict[1];
+                    }
+        
+                    return null;
+                }
+            }
+        }
+        </pre>
+
+    <h2>Error.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        
+        namespace TextEditorMVC
+        {
+            internal class Error
+            {
+                public int Position { get; }
+                public string ErrorMessage { get; }
+        
+                public Error(int position, string errorMessage)
+                {
+                    this.Position = position;
+                    this.ErrorMessage = errorMessage;
+                }
+            }
+        }
+        </pre>
+
+    <h2>LexemaInfo.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.ComponentModel;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        using TextEditorMVC.Models;
+        
+        namespace TextEditorMVC
+        {
+            internal class LexemaInfo
+            {
+                public int Position { get; }
+                public LexemaType LexemaType { get; }
+                public string Text { get; }
+        
+                public LexemaInfo(string text, int Position, LexemaType lexemaType)
+                {
+                    this.Text = text;
+                    this.Position = Position;
+                    this.LexemaType = lexemaType;
+                }
+            }
+        }
+        </pre>
+
+    <h2>LexemaType.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        
+        namespace TextEditorMVC.Models
+        {
+            internal class LexemaType
+            {
+                public int Code { get; set; }
+                public string Name { get; set; }
+        
+                public LexemaType(int code, string name)
+                {
+                    Code = code;
+                    Name = name;
+                }
+            }
+        
+            internal static class LexemaTypes
+            {
+                public static Dictionary<int, LexemaType> dict = new()
+                {
+                    { 1, new LexemaType(1, "ключевое слово - const") },
+                    { 2, new LexemaType(2, "ключевое слово - val") },
+                    { 3, new LexemaType(3, "ключевое слово - Double") },
+                    { 4, new LexemaType(4, "идентификатор") },
+                    { 5, new LexemaType(5, "разделитель - пробел") },
+                    { 6, new LexemaType(6, "оператор присваивания - '='") },
+                    { 7, new LexemaType(7, "оператор принадлежности к типу - ':'") },
+                    { 8, new LexemaType(8, "вещественное число") },
+                    { 9, new LexemaType(9, "конец оператора - ';'") },
+                    { 10, new LexemaType(10, "переход на новую строку") },
+                };
+            }
+        
+        }
+        </pre>
+
+    <h2>TextHelper.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        
+        namespace TextEditorMVC
+        {
+            internal static class TextHelper
+            {
+                public static string Text;
+        
+                public static string CreateTextFromLexemes(List<LexemaInfo> lexemes)
+                {
+                    string result = String.Empty;
+        
+                    foreach (LexemaInfo info in lexemes)
+                    {
+                        if (info.Text == "\\n")
+                        {
+                            result += '\n';
+                        }
+                        else
+                        {
+                            result += info.Text;
+                        }
+                    }
+        
+                    return result;
+                }
+        
+                public static Tuple<int, int> GetPosition(int position)
+                {
+                    int lineNumber = 1;
+                    int charPosition = 1; // Позиция символа в строке (начинается с 1)
+        
+                    // Найти номер строки и позицию в строке
+                    for (int i = 0; i < position && i < Text.Length; i++)
+                    {
+                        if (Text[i] == '\n')
+                        {
+                            lineNumber++;
+                            charPosition = 1; // Сбросить позицию, так как мы переходим на новую строку
+                        }
+                        else
+                        {
+                            charPosition++;
+                        }
+                    }
+        
+                    return new Tuple<int, int>(charPosition, lineNumber);
+                }
+        
+                public static int NumberOfEmptyStrings(List<LexemaInfo> list)
+                {
+                    int count = 0;
+        
+                    for (int i = 1; i < list.Count; i++)
+                    {
+                        if (list[i].Text == "\\n" && list[i - 1].Text == list[i].Text)
+                        {
+                            if (count == 0)
+                            {
+                                count++;
+                            }
+                            count++;
+                        }
+                    }
+        
+                    return count;
+                }
+            }
+        }
+        </pre>
+
+    <h2>UndoRedoManager.cs</h2>
+    <pre>using System;
+        using System.Collections.Generic;
+        using System.Linq;
+        using System.Text;
+        using System.Threading.Tasks;
+        using System.Windows.Controls;
+        using static System.Net.Mime.MediaTypeNames;
+        
+        namespace TextEditorMVC
+        {
+            internal class UndoRedoManager
+            {
+                private Stack<string> undoStack = new Stack<string>();
+                private Stack<string> redoStack = new Stack<string>();
+                int maxUndoStackElements = 15;
+        
+                public void SaveState(string text)
+                {
+                    if (undoStack.Count == 0)
+                    {
+                        undoStack.Push(text);
+                        redoStack.Clear();
+                    }
+                    else if (Math.Abs(text.Length - undoStack.First().Length) < 5)
+                    {
+                        return;
+                    }
+        
+                    if (undoStack.Count > maxUndoStackElements)
+                    {
+                        undoStack.Pop();
+                    }
+        
+                    undoStack.Push(text);
+                    redoStack.Clear();
+                }
+        
+                public string? Undo()
+                {
+                    if (undoStack.Count > 1)
+                    {
+                        redoStack.Push(undoStack.Pop());
+                        return ApplyState();
+                    }
+                    return null;
+                }
+        
+                public string? Redo()
+                {
+                    if (redoStack.Count > 0)
+                    {
+                        undoStack.Push(redoStack.Pop());
+                        return ApplyState();
+                    }
+                    return null;
+                }
+        
+                private string? ApplyState()
+                {
+                    if (undoStack.Count > 0)
+                    {
+                        return undoStack.Peek();
+                    }
+                    return null;
+                }
+            }
+        }
+        </pre>
+
+</body>
+
+</html>

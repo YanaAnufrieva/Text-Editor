@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.IO;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -361,6 +363,9 @@ namespace TextEditorMVC
                 DataGridOutput.ItemsSource = lexerController.GetLexemesVM();
                 TabControlOutput.SelectedIndex = 1;
 
+                TabItem currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
+                ((TextBox)currentItem.Content).Text = lexerController.Code;
+
                 if (!parserController.SyntacticAnalysis(lexerController.GetLexemes()))
                 {
                     var errors = parserController.GetErrors();
@@ -371,7 +376,7 @@ namespace TextEditorMVC
                         var result = MessageBox.Show("В тексте обнаружены ошибки! Исправить?", "Ошибки", MessageBoxButton.YesNo);
                         if (result == MessageBoxResult.Yes)
                         {
-                            TabItem currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
+                            currentItem = (TabItem)TabControlFiles.Items[TabControlFiles.SelectedIndex];
                             ((TextBox)currentItem.Content).Text = TextHelper.CreateTextFromLexemes(correctedLexemes);
 
                             lexerController.LexicalAnalysis(filesController.OpenedFile.Content);
@@ -401,6 +406,86 @@ namespace TextEditorMVC
                 DataGridErrors.ItemsSource = lexerController.GetErrors();
                 TabControlOutput.SelectedIndex = 0;
             }
+        }
+
+        private void FormulationOfTheProblem_Click(object sender, RoutedEventArgs e)
+        {
+            var executablePath = Directory.GetCurrentDirectory();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"{executablePath}\\src\\FormulationOfTheProblem.html",
+                UseShellExecute = true
+            });
+        }
+
+        private void Grammar_Click(object sender, RoutedEventArgs e)
+        {
+            var executablePath = Directory.GetCurrentDirectory();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"{executablePath}\\src\\Grammar.html",
+                UseShellExecute = true
+            });
+        }
+
+        private void GrammarClassification_Click(object sender, RoutedEventArgs e)
+        {
+            var executablePath = Directory.GetCurrentDirectory();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"{executablePath}\\src\\GrammarClassification.html",
+                UseShellExecute = true
+            });
+        }
+
+        private void AnalysisMethod_Click(object sender, RoutedEventArgs e)
+        {
+            var executablePath = Directory.GetCurrentDirectory();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"{executablePath}\\src\\AnalysisMethod.html",
+                UseShellExecute = true
+            });
+        }
+
+        private void DiagnosticsAndNeutralizationOfErrors_Click(object sender, RoutedEventArgs e)
+        {
+            var executablePath = Directory.GetCurrentDirectory();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"{executablePath}\\src\\DiagnosticsAndNeutralizationOfErrors.html",
+                UseShellExecute = true
+            });
+        }
+
+        private void TextExample_Click(object sender, RoutedEventArgs e)
+        {
+            var executablePath = Directory.GetCurrentDirectory();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"{executablePath}\\src\\TextExample.html",
+                UseShellExecute = true
+            });
+        }
+
+        private void Bibliography_Click(object sender, RoutedEventArgs e)
+        {
+            var executablePath = Directory.GetCurrentDirectory();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"{executablePath}\\src\\Bibliography.html",
+                UseShellExecute = true
+            });
+        }
+
+        private void SourceCodes_Click(object sender, RoutedEventArgs e)
+        {
+            var executablePath = Directory.GetCurrentDirectory();
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = $"{executablePath}\\src\\SourceCodes.html",
+                UseShellExecute = true
+            });
         }
     }
 }

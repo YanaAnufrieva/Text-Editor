@@ -12,6 +12,11 @@ namespace TextEditorMVC
     {
         Lexer lexer;
 
+        public string Code
+        {
+            get { return lexer.Code; }
+        }
+
         public bool LexicalAnalysis(string code)
         {
             if (code == null || code.Length == 0) return false;
