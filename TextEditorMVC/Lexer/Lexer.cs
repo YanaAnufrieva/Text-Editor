@@ -126,13 +126,14 @@ namespace TextEditorMVC
                             break;
                         }
                     }
-
+                    
                     subText = code.Substring(i, j - i);
-
+                    // subText = 32.
                     if (IsRealNumber(subText))
                     {
                         if (subText[^1] == '.')
                         {
+                            // 32. -> 32.0
                             code = code.Replace(subText, subText + '0');
                             subText += '0';
                             j++;
