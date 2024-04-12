@@ -118,26 +118,28 @@ namespace TextEditorMVC
                 else if (Char.IsNumber(code[i]) || code[i] == '+' || code[i] == '-')
                 {
                     int j = i + 1;
-                    while (Char.IsNumber(code[j]) || code[j] == '.')
+                    if (j < code.Length)
                     {
-                        j++;
-                        if (j >= code.Length)
-                        {
-                            break;
-                        }
-                    }
-                    
+						while (Char.IsNumber(code[j]) || code[j] == '.')
+						{
+							j++;
+							if (j >= code.Length)
+							{
+								break;
+							}
+						}
+					}
+
                     subText = code.Substring(i, j - i);
-                    // subText = 32.
+
                     if (IsRealNumber(subText))
                     {
                         if (subText[^1] == '.')
                         {
-                            // 32. -> 32.0
                             code = code.Replace(subText, subText + '0');
                             subText += '0';
                             j++;
-                        }
+						}
 
                         lexemes.Add(new LexemaInfo(subText, i, LexemaTypes.dict[8]));
                     }
@@ -150,9 +152,9 @@ namespace TextEditorMVC
                 }
                 else if (IsSemicolon(code[i].ToString()))
                 {
-                    lexemes.Add(new LexemaInfo(";", i, LexemaTypes.dict[9]));
-                    i++;
-                }
+					lexemes.Add(new LexemaInfo(";", i, LexemaTypes.dict[9]));
+					i++;
+				}
                 else if (IsNewLine(code[i].ToString()))
                 {
                     lexemes.Add(new LexemaInfo("\\n", i, LexemaTypes.dict[10]));
@@ -181,7 +183,7 @@ namespace TextEditorMVC
         }
 
 
-        bool IsKeywordConst(string text)
+		bool IsKeywordConst(string text)
         {
             return (text == "const");
         }

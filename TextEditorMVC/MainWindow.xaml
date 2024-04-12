@@ -92,10 +92,10 @@
                 <MenuItem Header="О программе" Click="About_Click"></MenuItem>
             </MenuItem>
 
-            <Label FontSize="7pt" Margin="50,0,0,0">Размер текста:</Label>
+            <Label FontSize="7pt" Margin="50,0,0,0">Размер текста: </Label>
             <ComboBox x:Name="ComboBoxFontSizes" SelectionChanged="ComboBoxFontSizes_SelectionChanged" FontSize="10pt"/>
         </Menu>
-
+       
         <WrapPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Height="55">
             <Button ToolTip="Создать" Click="CreateFile_Click" Style="{StaticResource TopBarBtn}">
                 <Image Source="icons/create.png" Style="{StaticResource TopBarBtnImg}"/>
@@ -129,6 +129,9 @@
             </Button>
             <Button ToolTip="О программе" Click="About_Click" Style="{StaticResource TopBarBtn}">
                 <Image Source="icons/info.png" Style="{StaticResource TopBarBtnImg}"/>
+            </Button>
+            <Button ToolTip="ПОЛИЗ" Click="Poliz_Click" Style="{StaticResource TopBarBtn}">
+                <Image Source="icons/poliz.png" Style="{StaticResource TopBarBtnImg}"/>
             </Button>
         </WrapPanel>
 

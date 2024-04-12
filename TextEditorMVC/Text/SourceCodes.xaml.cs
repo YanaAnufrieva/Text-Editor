@@ -3,6 +3,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+
+namespace TextEditorMVC.Text
+{
+	/// <summary>
+	/// Interaction logic for SourceCodes.xaml
+	/// </summary>
+	public partial class SourceCodes : Window
+	{
+		public SourceCodes()
+		{
+			InitializeComponent();
+			ContentLabel.Text =
+@"using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using TextEditorMVC.Models;
 
 namespace TextEditorMVC
@@ -28,7 +53,7 @@ namespace TextEditorMVC
 		{
 			errors = new List<Error>();
 
-			prevLexema = new LexemaType(0, "Def");
+			prevLexema = new LexemaType(0, ""Def"");
 
 			while (i < lexemes.Count)
 			{
@@ -144,7 +169,7 @@ namespace TextEditorMVC
 				// текущая лексема не подходит
 				else
 				{
-					Error error = new(lexemes[i].Position, $"Ожидается {expectedLexemes[1].Name}");
+					Error error = new(lexemes[i].Position, $""Ожидается {expectedLexemes[1].Name}"");
 					errors.Add(error);
 					prevLexema = expectedLexemes[0];
 				}
@@ -175,7 +200,7 @@ namespace TextEditorMVC
 					}
 				}
 				// текущая лексема не подходит
-				Error error = new(lexemes[i].Position, $"Ожидается {expectedLexemes[1].Name}");
+				Error error = new(lexemes[i].Position, $""Ожидается {expectedLexemes[1].Name}"");
 				errors.Add(error);
 				prevLexema = expectedLexemes[1];
 			}
@@ -194,7 +219,7 @@ namespace TextEditorMVC
 						{
 							expectedLexemes = LexemaTypes.dict[5];
 							int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
-							errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+							errors.Add(new Error(position, $""Ожидается {expectedLexemes.Name}""));
 							prevLexema = expectedLexemes;
 							break;
 						}
@@ -202,7 +227,7 @@ namespace TextEditorMVC
 						{
 							expectedLexemes = LexemaTypes.dict[2];
 							int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
-							errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+							errors.Add(new Error(position, $""Ожидается {expectedLexemes.Name}""));
 							prevLexema = expectedLexemes;
 							break;
 						}
@@ -210,7 +235,7 @@ namespace TextEditorMVC
 						{
 							expectedLexemes = LexemaTypes.dict[4];
 							int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
-							errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+							errors.Add(new Error(position, $""Ожидается {expectedLexemes.Name}""));
 							prevLexema = expectedLexemes;
 							break;
 						}
@@ -218,7 +243,7 @@ namespace TextEditorMVC
 						{
 							expectedLexemes = LexemaTypes.dict[6];
 							int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
-							errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+							errors.Add(new Error(position, $""Ожидается {expectedLexemes.Name}""));
 							prevLexema = expectedLexemes;
 							break;
 						}
@@ -226,7 +251,7 @@ namespace TextEditorMVC
 						{
 							expectedLexemes = LexemaTypes.dict[7];
 							int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
-							errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+							errors.Add(new Error(position, $""Ожидается {expectedLexemes.Name}""));
 							prevLexema = expectedLexemes;
 							break;
 						}
@@ -234,7 +259,7 @@ namespace TextEditorMVC
 						{
 							expectedLexemes = LexemaTypes.dict[8];
 							int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
-							errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+							errors.Add(new Error(position, $""Ожидается {expectedLexemes.Name}""));
 							prevLexema = expectedLexemes;
 							break;
 						}
@@ -242,7 +267,7 @@ namespace TextEditorMVC
 						{
 							expectedLexemes = LexemaTypes.dict[3];
 							int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
-							errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+							errors.Add(new Error(position, $""Ожидается {expectedLexemes.Name}""));
 							prevLexema = expectedLexemes;
 							break;
 						}
@@ -250,7 +275,7 @@ namespace TextEditorMVC
 						{
 							expectedLexemes = LexemaTypes.dict[9];
 							int position = lexemes[i-1].Position + lexemes[i-1].Text.Length;
-							errors.Add(new Error(position, $"Ожидается {expectedLexemes.Name}"));
+							errors.Add(new Error(position, $""Ожидается {expectedLexemes.Name}""));
 							prevLexema = expectedLexemes;
 							break;
 						}
@@ -260,6 +285,10 @@ namespace TextEditorMVC
 						}
 				}
 			}
+		}
+	}
+}
+";
 		}
 	}
 }

@@ -20,7 +20,7 @@ namespace TextEditorMVC
         {
             int prevLexema = 0, currentLexema = 0;
             int i = 0;
-            while (i < lexemes.Count)
+            while (i <  lexemes.Count) 
             {
                 if (lexemes[i].LexemaType != ExpectedLexema(currentLexema, prevLexema))
                 {
@@ -89,8 +89,8 @@ namespace TextEditorMVC
             }
             else if (currentLexemaCode == 10)
             {
-                return LexemaTypes.dict[1];
-            }
+				return LexemaTypes.dict[1];
+			}
 
             return null;
         }

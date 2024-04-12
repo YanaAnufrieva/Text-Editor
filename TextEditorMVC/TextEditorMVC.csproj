@@ -17,10 +17,15 @@
     <None Remove="icons\insert.png" />
     <None Remove="icons\left.png" />
     <None Remove="icons\open.png" />
+    <None Remove="icons\poliz.png" />
     <None Remove="icons\right.png" />
     <None Remove="icons\save.png" />
     <None Remove="icons\start.png" />
     <None Remove="icons\text_editor.png" />
+    <None Remove="src\11.png" />
+    <None Remove="src\12.png" />
+    <None Remove="src\13.png" />
+    <None Remove="src\14.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,10 +37,18 @@
     <Resource Include="icons\insert.png" />
     <Resource Include="icons\left.png" />
     <Resource Include="icons\open.png" />
+    <Resource Include="icons\poliz.png" />
     <Resource Include="icons\right.png" />
     <Resource Include="icons\save.png" />
     <Resource Include="icons\start.png" />
     <Resource Include="icons\text_editor.png" />
+    <Resource Include="src\1.png" />
+    <Resource Include="src\11.png" />
+    <Resource Include="src\12.png" />
+    <Resource Include="src\13.png" />
+    <Resource Include="src\14.png" />
+    <Resource Include="src\2.png" />
+    <Resource Include="src\graph.png" />
   </ItemGroup>
 
 </Project>
