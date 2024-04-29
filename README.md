@@ -79,3 +79,21 @@ const val id: Double=-32.31
 ![image](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/0e168e27-6fe7-44e7-9f50-20ef66321521)
 
 ![image](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/f0051544-2052-4624-9aee-dea76e9d08a7)
+
+
+
+# Лабораторная работа №6
+
+### 12. Построить РВ для того, чтобы сопоставить все числа, которые не заканчиваются на 0.
+
+![image](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/5bfb3835-4424-49b7-9c1c-044ac98ad88a)
+
+
+### 21. Построить РВ, описывающее пароль (набор строчных и прописных латинских и русских букв, цифр и символов, длиной хотя бы 8 символов).
+
+![image](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/be14f896-d0f1-4e7f-9850-6ae7c675a174)
+
+
+### 6. Построить РВ для проверки даты, учитывая високосные годы. Формат даты: DD.MM.YYYY.
+
+![image](https://github.com/YanaAnufrieva/Text-editor/assets/108725129/f80272e0-5273-42bc-aaa2-7584bab32b5b)
